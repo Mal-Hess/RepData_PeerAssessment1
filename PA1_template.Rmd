@@ -1,25 +1,89 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template"
+author: "Mal"
+date: "Thursday, January 15, 2015"
+output: html_document
 ---
 
-
-## Loading and preprocessing the data
-
-
-
-## What is mean total number of steps taken per day?
+This is peer assesment 1 for Reproducible Research course on Coursera.
+Here I will analyze some walking data and using knitr.  The end result is a clean and organized description of both the results I have found along with the code that I used to get it.  
 
 
+First I loaded in my data.
 
-## What is the average daily activity pattern?
+```{r}
+mydata <- read.csv("activity.csv", header = TRUE)
+```
+
+Then I had to transform and manipulate the data to analyze it.  First, I created a subset called completedata that had only the complete cases in it.  Then I split the data by date so I could use the sapply function to calculate the sum of all steps in a given day. Below is a histogram of the steps taken by day.
+
+
+```{r}
+
+completedata <-subset(mydata,complete.cases(mydata)==TRUE) 
+
+bydate<-split(completedata,completedata$date, drop=TRUE)          
+totalstepsperday <-sapply(bydate, function(x) sum(x$steps))
+
+mean <- mean(totalstepsperday)
+mean <- round(mean)
+median <- median(totalstepsperday)
+
+hist(totalstepsperday, main="Steps taken by Day", col="dark green")
+```
+
+The mean of the data is `r mean`, and the median of the data is `r median`.
+
+Below is a chart showing the average number of steps by the 5-min interval.  
+
+
+```{r}
+bysteps <- split(completedata,completedata$interval)     
+avgofintervalsteps <- sapply(bysteps, function(x) mean(x$steps))    
+plot(avgofintervalsteps, type="l",  main="Average of steps by 5-min interval", xlab="Interval", col="cyan", ylab="Average of steps by interval")                         
+
+
+maxinterval <- names(which.max(avgofintervalsteps))
+stepsofmax <- max(avgofintervalsteps)
+```
+
+
+The max steps for 5 minute interval happens at `r maxinterval`.
+The average number of steps for that interval is `r stepsofmax`.
+
+To compare the number of steps between weekdays and weekends I created a new data frame.  I then adjusted the date to be a Time class since it originally was read in as a factor class.  Then using weekdays to create a new column that contained the day of the week.  Finally I used a for loop to go through that new day column and change it to either weekend or a weekday.
+
+```{r}
+new <- completedata
+new$date <- as.Date(new$date, "%Y-%d-%m")
+new$day <- weekdays(new$date)
+for (i in 1:nrow(new)) {                                      
+    if (new[i,]$day %in% c("Saturday","Sunday")) {             
+        new[i,]$day<-"weekend"                                 
+    }
+    else{
+        new[i,]$day<-"weekday"                                 
+    }
+}
 
 
 
-## Imputing missing values
+```
+
+Below you can see the steps for weekdays which has been plotted in blue.
 
 
+```{r}
 
-## Are there differences in activity patterns between weekdays and weekends?
+weekday <- subset(new, new$day =="weekday")
+weekend <- subset(new, new$day == "weekend")
+
+par(mfrow=c(1,1))  
+plot(weekday$steps, type="l",  main="Weekday steps", xlab="Interval", col="blue")
+```
+
+It looks different from the steps during the weekends which is plotted below in red. 
+
+```{r}
+plot(weekend$steps, type="l",  main="Weekend steps", col="red", xlab="Interval")
+```
